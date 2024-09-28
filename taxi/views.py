@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 
 from .forms import DriverCreationForm, DriverLicenseUpdateForm, CarCreateForm
 from .models import Driver, Car, Manufacturer
@@ -63,6 +64,7 @@ class CarListView(LoginRequiredMixin, generic.ListView):
 
 class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
+    queryset = Car.objects.prefetch_related("drivers")
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
@@ -112,7 +114,7 @@ class DriverUpdateView(LoginRequiredMixin, generic.UpdateView):
 def assign_to_car(request, pk):
     driver = Driver.objects.get(id=request.user.id)
     car = Car.objects.get(id=pk)
-    if car in driver.cars.all():
+    if driver.cars.filter(id=car.id).exists():
         driver.cars.remove(pk)
     else:
         driver.cars.add(pk)
